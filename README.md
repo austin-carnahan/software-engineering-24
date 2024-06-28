@@ -55,8 +55,8 @@ Needs more documentation!
 `flask --app app run`
 
 Team Members
-Raghunath Kunigiri: Raghunath.Kunigiri@slu.edu
-Gowthamsai Mukthineni: Gowthamsai.mukthineni@slu.edu
-Sai Goutham Chedhella: saigoutham.chedhella@slu.edu
-Austin Carnahan: ac6404@gmail.com
-Saaisathish Sankarabhattar Ayyappan: ssankarabhattara@slu.edu
+1) Raghunath Kunigiri: Raghunath.Kunigiri@slu.edu
+2) Gowthamsai Mukthineni: Gowthamsai.mukthineni@slu.edu
+3) Sai Goutham Chedhella: saigoutham.chedhella@slu.edu
+4) Austin Carnahan: ac6404@gmail.com
+5) Saaisathish Sankarabhattar Ayyappan: ssankarabhattara@slu.edu
