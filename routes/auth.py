@@ -1,18 +1,13 @@
-from flask import Flask, render_template, request, jsonify, redirect, url_for
-from flask import current_app as app
+# routes/auth.py
+from flask import Blueprint, request, jsonify, render_template
 from flask_bcrypt import Bcrypt
-from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity
+from flask_jwt_extended import create_access_token
 from mongoengine.errors import DoesNotExist
 from models import User
 
-bcrypt = Bcrypt(app)
-jwt = JWTManager(app)
+bp = Blueprint('auth', __name__)
 
-@app.route('/', methods=['GET'])
-def home():
-    return render_template('index.html')
-
-@app.route('/login', methods=['GET', 'POST'])
+@bp.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'GET':
         return render_template('login.html')
