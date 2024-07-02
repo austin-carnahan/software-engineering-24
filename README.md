@@ -57,6 +57,12 @@ Needs more documentation!
 
 `flask --app app run`
 
+### Design Diagrams
+
+![UML](static/images/uml-diagram.png)
+
+![views](static/images/mockup-views.png)
+
 Team Members
 1) Raghunath Kunigiri: Raghunath.Kunigiri@slu.edu
 2) Gowthamsai Mukthineni: Gowthamsai.mukthineni@slu.edu
