@@ -63,6 +63,8 @@ Needs more documentation!
 
 ![views](static/images/mockup-views.png)
 
+![views](static/images/use-case.png)
+
 Team Members
 1) Raghunath Kunigiri: Raghunath.Kunigiri@slu.edu
 2) Gowthamsai Mukthineni: Gowthamsai.mukthineni@slu.edu
