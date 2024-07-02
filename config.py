@@ -1,8 +1,13 @@
+import os
+
 class Config:
-    """Base configuration."""
-    DEBUG = False
-    TESTING = False
-    DATABASE_URI = 'sqlite:///:memory:'
+    SECRET_KEY = os.getenv('SECRET_KEY', 'mysecret')
+    JWT_SECRET_KEY = os.getenv('JWT_SECRET_KEY', 'myjwtsecret')
+    MONGODB_SETTINGS = {
+        'db': 'budget_db',
+        'host': 'localhost',
+        'port': 27017
+    }
 
 class DevelopmentConfig(Config):
     """Development configuration."""
