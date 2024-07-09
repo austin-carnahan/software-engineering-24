@@ -44,7 +44,7 @@ The Personal Budget Management and Savings Forecasting System is a comprehensive
 2) source venv/Scripts/activate  # On Windows
 3) source venv/bin/activate      # On macOS/Linux
 4) pip install -r requirements.txt
-5) python run.py
+5) python run.py or flask run
 6) a) Navigate to the templates/home.html File, Open your code editor and navigate to the templates/home.html file.
 b) Use Live Server
 Right-click on home.html and select the option to open with Live Server. This will start a local server and open your default browser to view the HTML file.
