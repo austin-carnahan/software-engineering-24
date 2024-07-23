@@ -1,10 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <!-- Global CSS -->
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/global.css') }}">
-    <!-- Individual CSS for this specific template -->
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/individual/home.css') }}">
+    <link rel="stylesheet" href="/static/css/global.css">
+    <link rel="stylesheet" href="/static/css/individual/home.css">
     <title>Home Page</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -13,7 +11,7 @@
 <body>
     <header>
         <div class="logo">
-            <img src="{{ url_for('static', filename='images/wallet.png') }}" alt="Personal Budget Logo">
+            <img src="/static/images/wallet.png" alt="Personal Budget Logo">
             <h1>Personal Budget</h1>
         </div>
         <nav>
@@ -27,7 +25,7 @@
         </nav>
     </header>
     <div class="container" id="main-content">
-        <img src="{{ url_for('static', filename='images/wallet.png') }}" alt="Wallet Icon">
+        <img src="/static/images/wallet.png" alt="Wallet Icon">
         <h1>PERSONAL BUDGET</h1>
         <h2>Expense Manager</h2>
         <p>Manage your personal finances and easily track your money, expenses and budget</p>
@@ -36,23 +34,23 @@
 
     <div class="container" id="login-form-container" style="display: none;">
         <h2>Login</h2>
-        <form action="#" method="POST">
+        <form id="login-form" method="POST">
             <div class="input-group">
                 <i class="fas fa-user"></i>
-                <input type="email" id="email" name="email" placeholder="Email" required>
+                <input type="email" id="login-email" name="email" placeholder="Email" required>
             </div>
             <div class="input-group">
                 <i class="fas fa-lock"></i>
-                <input type="password" id="password" name="password" placeholder="Password" required>
+                <input type="password" id="login-password" name="password" placeholder="Password" required>
             </div>
             <button type="submit">Login</button>
-            <button id="register-btn">Register</button>
+            <button id="register-btn" type="button">Register</button>
         </form>
     </div>
 
     <div class="container" id="registration-form-container" style="display: none;">
         <h2>Registration</h2>
-        <form action="#" method="post">
+        <form id="registration-form" method="POST">
             <div class="input-group">
                 <i class="fas fa-envelope"></i>
                 <input type="email" name="email" placeholder="Email" required>
@@ -60,6 +58,18 @@
             <div class="input-group">
                 <i class="fas fa-lock"></i>
                 <input type="password" name="password" placeholder="Password" required>
+            </div>
+            <div class="input-group">
+                <i class="fas fa-user"></i>
+                <input type="text" name="nickname" placeholder="Your Nickname" required>
+            </div>
+            <div class="input-group">
+                <i class="fas fa-utensils"></i>
+                <input type="text" name="favorite_food" placeholder="Favorite Food" required>
+            </div>
+            <div class="input-group">
+                <i class="fas fa-film"></i>
+                <input type="text" name="favorite_movie" placeholder="Favorite Movie" required>
             </div>
             <button type="submit">SIGN UP</button>
         </form>
@@ -91,6 +101,36 @@
                 $('#login-form-container').hide();
                 $('#registration-form-container').hide();
                 $('#main-content').fadeIn();
+            });
+
+            $('#registration-form').submit(function(event) {
+                event.preventDefault();
+                const formData = $(this).serialize();
+
+                $.post('/register', formData, function(response) {
+                    alert(response.message);
+                    if (response.message === "Registration successful") {
+                        $('#main-content').hide();
+                        $('#registration-form-container').hide();
+                        $('#login-form-container').fadeIn();
+                    }
+                }).fail(function(response) {
+                    alert(response.responseJSON.error);
+                });
+            });
+
+            $('#login-form').submit(function(event) {
+                event.preventDefault();
+                const formData = $(this).serialize();
+
+                $.post('/login', formData, function(response) {
+                    alert(response.message);
+                    if (response.message === "Login successful") {
+                        window.location.href = '/dashboard';  // Redirect to dashboard
+                    }
+                }).fail(function(response) {
+                    alert(response.responseJSON.error);
+                });
             });
         });
     </script>
