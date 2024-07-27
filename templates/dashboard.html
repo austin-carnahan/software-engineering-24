@@ -5,29 +5,60 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard</title>
-    <link rel="stylesheet" href="/static/css/global.css">
-    <link rel="stylesheet" href="/static/css/individual/dashboard.css">
+    <link rel="stylesheet" href="/static/css/home.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
 </head>
 
 <body>
-    <header>
-        <div class="logo">
-            <a href="/templates/index.html">
+    <div class="container">
+        <div class="sidebar">
+            <div class="logo">
                 <img src="/static/images/wallet.png" alt="Personal Budget Logo">
                 <h1>Personal Budget</h1>
-            </a>
-        </div>
-        <nav>
-            <ul>
-                <li class="auth-buttons"><button class="auth-button" id="home-btn">Home</button></li>
-                <li class="auth-buttons"><button class="auth-button" id="logout-btn">Log out</button></li>
+            </div>
+            <ul class="nav-items">
+                <li><a href="#" class="active">Budget Summary</a></li>
+                <li><a href="#">Budget Form</a></li>
+                <li><a href="#">Profile</a></li>
             </ul>
-        </nav>
-    </header>
-    <div class="container">
-        <h1>Welcome to your Dashboard</h1>
-        <p>Here you can manage your personal finances.</p>
+        </div>
+
+        <div class="content">
+            <div class="header">
+                <button id="sidebar-menu-button"><span class="menu-icon">☰</span></button>
+                <h2>Budget Summary</h2>
+                <div class="logout-button">
+                    <button id="logout-btn">Logout</button>
+                </div>
+            </div>
+
+            <div class="main-section">
+            </div>
+        </div>
     </div>
+
+    <script>
+        const sidebarMenuBtn = document.getElementById('sidebar-menu-button');
+        const sidebar = document.querySelector('.sidebar');
+        const content = document.querySelector('.content');
+
+        sidebarMenuBtn.addEventListener('click', () => {
+            sidebar.classList.toggle('active');
+            content.classList.toggle('sidebar-active');
+        });
+
+        $(document).ready(function () {
+            $('#logout-btn').click(function () {
+                $.get('/logout', function (response) {
+                    alert(response.message); 
+                    window.location.href = '/';
+                }).fail(function () {
+                    alert('Logout failed. Please try again.');
+                });
+            });
+        });
+    </script>
+
 </body>
 
 </html>

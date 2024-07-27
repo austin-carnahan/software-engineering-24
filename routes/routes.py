@@ -1,4 +1,4 @@
-from flask import render_template, request, jsonify, redirect, url_for
+from flask import render_template, request, jsonify, redirect, url_for, session
 from flask_bcrypt import Bcrypt
 from flask_jwt_extended import JWTManager, create_access_token, jwt_required
 from pymongo import MongoClient
@@ -44,6 +44,7 @@ def register_routes(app):
         user = db.users.find_one({"email": email})
         if user and bcrypt.check_password_hash(user["password"], password):
             access_token = create_access_token(identity={"email": email})
+            session['email'] = email  # Store email in session
             response = jsonify({"message": "Login successful"})
             response.headers["Authorization"] = f"Bearer {access_token}"
             response.status_code = 200
@@ -53,5 +54,13 @@ def register_routes(app):
             return jsonify({"error": "Invalid credentials"}), 401
 
     @app.route('/dashboard', methods=['GET'])
+    @jwt_required(optional=True)  
     def dashboard():
+        if 'email' not in session:
+            return redirect(url_for('home'))
         return render_template('dashboard.html')
+    
+    @app.route('/logout', methods=['GET'])
+    def logout():
+        session.clear()
+        return jsonify({"message": "Logged out successfully"})
