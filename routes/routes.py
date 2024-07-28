@@ -17,41 +17,53 @@ def register_routes(app):
 
     @app.route('/register', methods=["POST"])
     def register():
-        email = request.form["email"]
-        password = request.form["password"]
-        nickname = request.form["nickname"]
-        favorite_food = request.form["favorite_food"]
-        favorite_movie = request.form["favorite_movie"]
+        data = request.get_json()
+        email = data.get("email")
+        password = data.get("password")
+        nickname = data.get("nickname")
+        favorite_food = data.get("favorite_food")
+        favorite_movie = data.get("favorite_movie")
+
+        if not all([email, password, nickname, favorite_food, favorite_movie]):
+            return jsonify({"error": "All fields are required"}), 400
 
         user = db.users.find_one({"email": email})
         if user:
-            return jsonify({"error": "Email already registered"}), 400  # Bad Request
+            return jsonify({"error": "Email already registered"}), 400
 
         hashed_password = bcrypt.generate_password_hash(password).decode('utf-8')
 
-        user = {"email": email, "password": hashed_password, "nickname": nickname,
-                "favorite_food": favorite_food, "favorite_movie": favorite_movie}
+        user = {
+            "email": email,
+            "password": hashed_password,
+            "nickname": nickname,
+            "favorite_food": favorite_food,
+            "favorite_movie": favorite_movie
+        }
 
         db.users.insert_one(user)
 
-        return jsonify({"message": "Registration successful"}), 201  # Created
+        return jsonify({"message": "Registration successful"}), 201
 
     @app.route('/login', methods=["POST"])
     def login():
-        email = request.form["email"]
-        password = request.form["password"]
+        data = request.get_json()
+        email = data.get("email")
+        password = data.get("password")
+
+        if not all([email, password]):
+            return jsonify({"error": "Email and password are required"}), 400
 
         user = db.users.find_one({"email": email})
         if user and bcrypt.check_password_hash(user["password"], password):
             access_token = create_access_token(identity={"email": email})
             response = jsonify({"message": "Login successful"})
             response.headers["Authorization"] = f"Bearer {access_token}"
-            response.status_code = 200
-            response.autocorrect_location_header = False
             return response
         else:
             return jsonify({"error": "Invalid credentials"}), 401
 
     @app.route('/dashboard', methods=['GET'])
+    @jwt_required()  # Ensure user is logged in to access dashboard
     def dashboard():
         return render_template('dashboard.html')

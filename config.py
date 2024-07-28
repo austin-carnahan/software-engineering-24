@@ -17,6 +17,7 @@ class TestingConfig(Config):
 
 class ProductionConfig(Config):
     """Production configuration."""
+    DEBUG = False
     DATABASE_URI = 'sqlite:///prod.db'
 
 # Select the appropriate configuration based on the environment variable
