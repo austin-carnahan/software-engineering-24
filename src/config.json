@@ -1,0 +1,28 @@
+{
+    "budgets": [
+        {
+            "event_name": "MasterClass Python",
+            "event_date": "2023-09-13",
+            "expenses": [
+                {
+                    "id": "4a3c74",
+                    "category": "Food",
+                    "particular": "Food pour les invit\u00e9s",
+                    "quantity": 100,
+                    "description": "le bouf",
+                    "price": 350.0,
+                    "total_cost": 35000.0
+                },
+                {
+                    "id": "0a7bdf",
+                    "category": "Miscellaneous",
+                    "particular": "Achat de forfait au cas ou",
+                    "quantity": 1,
+                    "description": "forfait internet",
+                    "price": 1500.0,
+                    "total_cost": 1500.0
+                }
+            ]
+        }
+    ]
+}
