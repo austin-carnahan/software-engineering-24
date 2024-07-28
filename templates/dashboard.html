@@ -27,7 +27,14 @@
     <div class="container">
         <h1>Welcome to your Dashboard</h1>
         <p>Here you can manage your personal finances.</p>
+        <button id="add-expenses-btn">Add Expenses</button>
+        <!-- Added button -->
     </div>
+    <script>
+        document.getElementById("add-expenses-btn").addEventListener("click", function() {
+            window.location.href = "/src/main.py"; // Adjust the URL based on your server setup
+        });
+    </script>
 </body>
 
 </html>
