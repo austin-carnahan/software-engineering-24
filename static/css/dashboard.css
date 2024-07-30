@@ -1,0 +1,44 @@
+.chart-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+}
+
+.chart-container {
+    flex: 1 1 calc(50% - 20px); /* Adjust the percentage to control the number of columns */
+    box-sizing: border-box;
+    padding: 10px;
+    background-color: #f9f9f9;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    text-align: center;
+    color: #333;
+}
+.input-group {
+    display: flex;
+    align-items: center;
+    flex-direction: column;
+    margin-bottom: 1em;
+    max-width: 50%;
+    margin: 0 auto;
+}
+
+.input-group label {
+    margin-bottom: 0.5em;
+}
+
+.chart-container h2 {
+    margin-bottom: 10px;
+}
+
+@media (max-width: 768px) {
+    .chart-container {
+        flex: 1 1 calc(50% - 20px); /* Two columns on medium screens */
+    }
+}
+
+@media (max-width: 480px) {
+    .chart-container {
+        flex: 1 1 100%; /* One column on small screens */
+    }
+}
