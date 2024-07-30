@@ -43,6 +43,7 @@ def register_routes(app):
         password = request.form["password"]
 
         user = db.users.find_one({"email": email})
+        print(user)
         if user and bcrypt.check_password_hash(user["password"], password):
             access_token = create_access_token(identity={"email": email})
             response = jsonify({"message": "Login successful"})
@@ -62,3 +63,9 @@ def register_routes(app):
         with open('budget_data.json') as f:
             data = json.load(f)
         return jsonify(data)
+
+    # @app.route('/api/budget_data', methods=['POST'])
+    # def budget_data():
+    #     with open('budget_data.json') as f:
+    #         data = json.load(f)
+    #     return jsonify(data)

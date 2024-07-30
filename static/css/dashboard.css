@@ -12,6 +12,7 @@
     border: 1px solid #ddd;
     border-radius: 8px;
     text-align: center;
+    color: #333;
 }
 .input-group {
     display: flex;
