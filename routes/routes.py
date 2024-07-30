@@ -144,41 +144,7 @@ def register_routes(app):
         except Exception as e:
             return jsonify({"error": str(e)}), 500
         
-    @app.route('/profile', methods=['GET', 'POST'])
-    def profile():
-        if 'email' not in session:
-            return redirect(url_for('home'))
         
-        if request.method == 'POST':
-            form_data = request.get_json()
-            if not form_data:
-                return jsonify({"error": "No data provided"}), 400
-
-            first_name = form_data.get('firstName')
-            last_name = form_data.get('lastName')
-            email = form_data.get('email')
-            phone_number = form_data.get('phoneNumber')
-
-            # Ensure email from form data matches the session email
-            if email != session['email']:
-                return jsonify({"error": "Email mismatch"}), 400
-
-            try:
-                # Update or insert the profile data
-                db.profiles.update_one(
-                    {'email': email},
-                    {'$set': {
-                        'first_name': first_name,
-                        'last_name': last_name,
-                        'phone_number': phone_number
-                    }},
-                    upsert=True
-                )
-                return jsonify({"message": "Profile data saved successfully"}), 201
-            except Exception as e:
-                return jsonify({"error": str(e)}), 500
-        return render_template('budgetform.html')
-    
     @app.route('/profile', methods=['GET', 'POST'])
     def profile():
         if 'email' not in session:
