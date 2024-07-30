@@ -239,6 +239,7 @@ def register_routes(app):
         
     @app.route('/transactions', methods=['GET', 'POST'])
     def transactions():
+        print("In transactions handler")
         if 'email' not in session:
             return redirect(url_for('home'))
 
