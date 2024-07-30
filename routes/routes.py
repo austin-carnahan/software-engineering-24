@@ -117,3 +117,62 @@ def register_routes(app):
                 return jsonify({"error": str(e)}), 500
 
         return render_template('budgetform.html')
+    
+    @app.route('/profile', methods=['GET', 'POST'])
+    def profile():
+        if 'email' not in session:
+            return redirect(url_for('home'))
+        
+        if request.method == 'POST':
+            form_data = request.get_json()
+            if not form_data:
+                return jsonify({"error": "No data provided"}), 400
+
+            first_name = form_data.get('firstName')
+            last_name = form_data.get('lastName')
+            email = form_data.get('email')
+            phone_number = form_data.get('phoneNumber')
+
+            # Ensure email from form data matches the session email
+            if email != session['email']:
+                return jsonify({"error": "Email mismatch"}), 400
+
+            try:
+                # Update or insert the profile data
+                db.profiles.update_one(
+                    {'email': email},
+                    {'$set': {
+                        'first_name': first_name,
+                        'last_name': last_name,
+                        'phone_number': phone_number
+                    }},
+                    upsert=True
+                )
+                return jsonify({"message": "Profile data saved successfully"}), 201
+            except Exception as e:
+                return jsonify({"error": str(e)}), 500
+
+        return render_template('profile.html')
+    
+    @app.route('/get_profile', methods=['GET'])
+    def get_profile():
+        if 'email' not in session:
+            return redirect(url_for('home'))
+
+        email = session['email']
+        profile = db.profiles.find_one({"email": email})
+
+        if profile:
+            return jsonify({
+                "firstName": profile.get('first_name', ''),
+                "lastName": profile.get('last_name', ''),
+                "email": profile.get('email', ''),
+                "phoneNumber": profile.get('phone_number', '')
+            })
+        else:
+            return jsonify({
+                "firstName": "",
+                "lastName": "",
+                "email": "",
+                "phoneNumber": ""
+            })
