@@ -17,15 +17,18 @@ def register_routes(app):
 
     @app.route('/register', methods=["POST"])
     def register():
-        email = request.form["email"]
-        password = request.form["password"]
-        nickname = request.form["nickname"]
-        favorite_food = request.form["favorite_food"]
-        favorite_movie = request.form["favorite_movie"]
+        email = request.form.get("email")
+        password = request.form.get("password")
+        nickname = request.form.get("nickname")
+        favorite_food = request.form.get("favorite_food")
+        favorite_movie = request.form.get("favorite_movie")
+
+        if not email or not password:
+            return jsonify({"error": "Email and password are required"}), 400
 
         user = db.users.find_one({"email": email})
         if user:
-            return jsonify({"error": "Email already registered"}), 400  # Bad Request
+            return jsonify({"error": "Email already registered"}), 400
 
         hashed_password = bcrypt.generate_password_hash(password).decode('utf-8')
 
@@ -34,33 +37,83 @@ def register_routes(app):
 
         db.users.insert_one(user)
 
-        return jsonify({"message": "Registration successful"}), 201  # Created
+        return jsonify({"message": "Registration successful"}), 201
 
     @app.route('/login', methods=["POST"])
     def login():
-        email = request.form["email"]
-        password = request.form["password"]
+        email = request.form.get("email")
+        password = request.form.get("password")
+
+        if not email or not password:
+            return jsonify({"error": "Email and password are required"}), 400
 
         user = db.users.find_one({"email": email})
         if user and bcrypt.check_password_hash(user["password"], password):
             access_token = create_access_token(identity={"email": email})
-            session['email'] = email  # Store email in session
+            session['email'] = email
             response = jsonify({"message": "Login successful"})
             response.headers["Authorization"] = f"Bearer {access_token}"
-            response.status_code = 200
-            response.autocorrect_location_header = False
             return response
         else:
             return jsonify({"error": "Invalid credentials"}), 401
 
     @app.route('/dashboard', methods=['GET'])
-    @jwt_required(optional=True)  
+    @jwt_required(optional=True)
     def dashboard():
         if 'email' not in session:
             return redirect(url_for('home'))
         return render_template('dashboard.html')
-    
+
     @app.route('/logout', methods=['GET'])
     def logout():
         session.clear()
         return jsonify({"message": "Logged out successfully"})
+
+    @app.route('/budgetform', methods=['GET', 'POST'])
+    def budget_form():
+        if 'email' not in session:
+            return redirect(url_for('home'))
+
+        if request.method == 'POST':
+            form_data = request.get_json()
+            if not form_data:
+                return jsonify({"error": "No data provided"}), 400
+
+            primary_income = form_data.get('primaryIncome')
+            other_income = form_data.get('otherIncome')
+            housing = form_data.get('housing')
+            groceries = form_data.get('groceries')
+            shopping = form_data.get('shopping')
+            transportation = form_data.get('transportation')
+            bills = form_data.get('bills')
+            entertainment = form_data.get('entertainment')
+            education = form_data.get('education')
+            savings = form_data.get('savings')
+            debt = form_data.get('debt')
+            debt_balance = form_data.get('debtBalance')
+            savings_balance = form_data.get('savingsBalance')
+
+            email = session['email']
+
+            try:
+                db.budgets.insert_one({
+                    'email': email,
+                    'primary_income': primary_income,
+                    'other_income': other_income,
+                    'housing': housing,
+                    'groceries': groceries,
+                    'shopping': shopping,
+                    'transportation': transportation,
+                    'bills': bills,
+                    'entertainment': entertainment,
+                    'education': education,
+                    'savings': savings,
+                    'debt': debt,
+                    'debt_balance': debt_balance,
+                    'savings_balance': savings_balance
+                })
+                return jsonify({"message": "Budget data saved successfully"}), 201
+            except Exception as e:
+                return jsonify({"error": str(e)}), 500
+
+        return render_template('budgetform.html')
