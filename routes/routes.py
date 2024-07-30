@@ -177,41 +177,7 @@ def register_routes(app):
                 return jsonify({"message": "Profile data saved successfully"}), 201
             except Exception as e:
                 return jsonify({"error": str(e)}), 500
-        return render_template('budgetform.html')
-    
-    @app.route('/profile', methods=['GET', 'POST'])
-    def profile():
-        if 'email' not in session:
-            return redirect(url_for('home'))
-        
-        if request.method == 'POST':
-            form_data = request.get_json()
-            if not form_data:
-                return jsonify({"error": "No data provided"}), 400
 
-            first_name = form_data.get('firstName')
-            last_name = form_data.get('lastName')
-            email = form_data.get('email')
-            phone_number = form_data.get('phoneNumber')
-
-            # Ensure email from form data matches the session email
-            if email != session['email']:
-                return jsonify({"error": "Email mismatch"}), 400
-
-            try:
-                # Update or insert the profile data
-                db.profiles.update_one(
-                    {'email': email},
-                    {'$set': {
-                        'first_name': first_name,
-                        'last_name': last_name,
-                        'phone_number': phone_number
-                    }},
-                    upsert=True
-                )
-                return jsonify({"message": "Profile data saved successfully"}), 201
-            except Exception as e:
-                return jsonify({"error": str(e)}), 500
         return render_template('profile.html')
     
     @app.route('/get_profile', methods=['GET'])
@@ -236,49 +202,4 @@ def register_routes(app):
                 "email": "",
                 "phoneNumber": ""
             })
-        
-    @app.route('/transactions', methods=['GET', 'POST'])
-    def transactions():
-        if 'email' not in session:
-            return redirect(url_for('home'))
 
-        email = session['email']
-
-        if request.method == 'POST':
-            form_data = request.get_json()
-            event_name = form_data.get('event_name')
-            event_date = form_data.get('event_date')
-            category = form_data.get('category')
-            description = form_data.get('description', '')  # Optional field
-            price = form_data.get('price')
-
-            if not event_name or not event_date or not category or not price:
-                return jsonify({"error": "All required fields must be filled out"}), 400
-
-            try:
-                db.transactions.insert_one({
-                    'email': email,
-                    'event_name': event_name,
-                    'event_date': event_date,
-                    'category': category,
-                    'description': description,
-                    'price': float(price)
-                })
-                return jsonify({"message": "Transaction saved successfully"}), 201
-            except Exception as e:
-                return jsonify({"error": str(e)}), 500
-
-        # When accessed with GET method, return transactions.html
-        return render_template('transactions.html')
-
-    @app.route('/get_transactions', methods=['GET'])
-    def get_transactions():
-        if 'email' not in session:
-            return redirect(url_for('home'))
-
-        email = session['email']
-        transactions = list(db.transactions.find({"email": email}, {'_id': False}))
-
-        total_amount = sum(t['price'] for t in transactions)
-
-        return jsonify(transactions=transactions, total=total_amount)
