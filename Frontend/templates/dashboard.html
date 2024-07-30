@@ -5,8 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard</title>
-    <link rel="stylesheet" href="/static/css/global.css">
-    <link rel="stylesheet" href="/static/css/individual/dashboard.css">
+    <link rel="stylesheet" href="/static/css/dashboard.css">
 </head>
 
 <body>
@@ -21,6 +20,11 @@
             <ul>
                 <li class="auth-buttons"><button class="auth-button" id="home-btn">Home</button></li>
                 <li class="auth-buttons"><button class="auth-button" id="logout-btn">Log out</button></li>
+                <li class="auth-buttons">
+                    <form action="http://localhost:8502/" method="get">
+                        <button type="submit" class="auth-button" id="budget-generator-btn">Budget Generator</button>
+                    </form>
+                </li>
             </ul>
         </nav>
     </header>
