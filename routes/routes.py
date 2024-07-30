@@ -2,6 +2,7 @@ from flask import render_template, request, jsonify, redirect, url_for, session
 from flask_bcrypt import Bcrypt
 from flask_jwt_extended import JWTManager, create_access_token, jwt_required
 from pymongo import MongoClient
+import json
 
 def register_routes(app):
     bcrypt = Bcrypt(app)
@@ -73,31 +74,55 @@ def register_routes(app):
     def budget_form():
         if 'email' not in session:
             return redirect(url_for('home'))
+        return render_template('budgetform.html')
+    
+    @app.route('/api/budget_data', methods=['GET'])
+    def get_budget_data():
+        if 'email' not in session:
+            return jsonify({"error": "Unauthorized"}), 401
 
-        if request.method == 'POST':
-            form_data = request.get_json()
-            if not form_data:
-                return jsonify({"error": "No data provided"}), 400
+        email = session['email']
+        try:
+            budget_data = db.budgets.find_one({"email": email}, {"_id": 0})
+            if budget_data:
+                return jsonify(budget_data)
+            else:
+                return redirect(url_for('budget_form'))
+        except Exception as e:
+            return jsonify({"error": str(e)}), 500
+        
 
-            primary_income = form_data.get('primaryIncome')
-            other_income = form_data.get('otherIncome')
-            housing = form_data.get('housing')
-            groceries = form_data.get('groceries')
-            shopping = form_data.get('shopping')
-            transportation = form_data.get('transportation')
-            bills = form_data.get('bills')
-            entertainment = form_data.get('entertainment')
-            education = form_data.get('education')
-            savings = form_data.get('savings')
-            debt = form_data.get('debt')
-            debt_balance = form_data.get('debtBalance')
-            savings_balance = form_data.get('savingsBalance')
+    @app.route('/api/budget_data', methods=['POST'])
+    def post_budget_data():
+        if 'email' not in session:
+            return jsonify({"error": "Unauthorized"}), 401
 
-            email = session['email']
+        email = session['email']
+        form_data = request.get_json()
+        if not form_data:
+            return jsonify({"error": "No data provided"}), 400
 
-            try:
-                db.budgets.insert_one({
-                    'email': email,
+        primary_income = form_data.get('primaryIncome')
+        other_income = form_data.get('otherIncome')
+        housing = form_data.get('housing')
+        groceries = form_data.get('groceries')
+        shopping = form_data.get('shopping')
+        transportation = form_data.get('transportation')
+        bills = form_data.get('bills')
+        entertainment = form_data.get('entertainment')
+        education = form_data.get('education')
+        savings = form_data.get('savings')
+        debt = form_data.get('debt')
+        debt_balance = form_data.get('debtBalance')
+        savings_balance = form_data.get('savingsBalance')
+
+        email = session['email']
+
+        try:
+            db.budgets.update_one(
+            {'email': email},
+            {
+                '$set': {
                     'primary_income': primary_income,
                     'other_income': other_income,
                     'housing': housing,
@@ -111,11 +136,47 @@ def register_routes(app):
                     'debt': debt,
                     'debt_balance': debt_balance,
                     'savings_balance': savings_balance
-                })
-                return jsonify({"message": "Budget data saved successfully"}), 201
+                }
+            },
+            upsert=True
+        )
+            return jsonify({"message": "Budget data saved successfully"}), 201
+        except Exception as e:
+            return jsonify({"error": str(e)}), 500
+        
+    @app.route('/profile', methods=['GET', 'POST'])
+    def profile():
+        if 'email' not in session:
+            return redirect(url_for('home'))
+        
+        if request.method == 'POST':
+            form_data = request.get_json()
+            if not form_data:
+                return jsonify({"error": "No data provided"}), 400
+
+            first_name = form_data.get('firstName')
+            last_name = form_data.get('lastName')
+            email = form_data.get('email')
+            phone_number = form_data.get('phoneNumber')
+
+            # Ensure email from form data matches the session email
+            if email != session['email']:
+                return jsonify({"error": "Email mismatch"}), 400
+
+            try:
+                # Update or insert the profile data
+                db.profiles.update_one(
+                    {'email': email},
+                    {'$set': {
+                        'first_name': first_name,
+                        'last_name': last_name,
+                        'phone_number': phone_number
+                    }},
+                    upsert=True
+                )
+                return jsonify({"message": "Profile data saved successfully"}), 201
             except Exception as e:
                 return jsonify({"error": str(e)}), 500
-
         return render_template('budgetform.html')
     
     @app.route('/profile', methods=['GET', 'POST'])
@@ -151,7 +212,6 @@ def register_routes(app):
                 return jsonify({"message": "Profile data saved successfully"}), 201
             except Exception as e:
                 return jsonify({"error": str(e)}), 500
-
         return render_template('profile.html')
     
     @app.route('/get_profile', methods=['GET'])

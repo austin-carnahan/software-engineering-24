@@ -87,6 +87,38 @@
         const sidebar = document.querySelector('.sidebar');
         const content = document.querySelector('.content');
 
+        document.addEventListener('DOMContentLoaded', async function() {
+            try {
+                const response = await fetch('/api/budget_data', {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('accessToken')}` // Include JWT token if needed
+                    }
+                });
+
+                if (response.ok) {
+                    const budgetData = await response.json();
+                    document.getElementById('primaryIncome').value = budgetData.primary_income || '';
+                    document.getElementById('otherIncome').value = budgetData.other_income || '';
+                    document.getElementById('housing').value = budgetData.housing || '';
+                    document.getElementById('groceries').value = budgetData.groceries || '';
+                    document.getElementById('shopping').value = budgetData.shopping || '';
+                    document.getElementById('transportation').value = budgetData.transportation || '';
+                    document.getElementById('bills').value = budgetData.bills || '';
+                    document.getElementById('entertainment').value = budgetData.entertainment || '';
+                    document.getElementById('education').value = budgetData.education || '';
+                    document.getElementById('savings').value = budgetData.savings || '';
+                    document.getElementById('debt').value = budgetData.debt || '';
+                    document.getElementById('debtBalance').value = budgetData.debt_balance || '';
+                    document.getElementById('savingsBalance').value = budgetData.savings_balance || '';
+                } else {
+                    console.error('Failed to fetch budget data');
+                }
+            } catch (error) {
+                console.error('An error occurred while fetching budget data:', error);
+            }
+        });
+
         sidebarMenuBtn.addEventListener('click', () => {
             sidebar.classList.toggle('active');
             content.classList.toggle('sidebar-active');
@@ -122,8 +154,10 @@
                 savingsBalance: document.getElementById('savingsBalance').value
             };
 
+            console.log(formData);
+
             try {
-                const response = await fetch('/budgetform', {
+                const response = await fetch('/api/budget_data', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -136,6 +170,7 @@
                 if (response.ok) {
                     document.getElementById('summary').innerText = "Budget data saved successfully!";
                     document.getElementById('errors').innerText = '';
+                    window.location.href = '/dashboard';  // Navigate to the dashboard page
                 } else {
                     document.getElementById('errors').innerText = result.error || 'An error occurred. Please try again.';
                     document.getElementById('summary').innerText = '';
