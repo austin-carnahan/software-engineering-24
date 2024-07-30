@@ -1,0 +1,15 @@
+{
+    "primaryIncome": 5000,
+    "otherIncome": 500,
+    "housing": 1500,
+    "groceries": 400,
+    "shopping": 300,
+    "transportation": 200,
+    "bills": 600,
+    "entertainment": 150,
+    "education": 200,
+    "savings": 500,
+    "debt": 300,
+    "debtBalance": 10000,
+    "savingsBalance": 5000
+}
