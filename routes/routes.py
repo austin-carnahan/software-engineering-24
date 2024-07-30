@@ -2,6 +2,7 @@ from flask import render_template, request, jsonify, redirect, url_for
 from flask_bcrypt import Bcrypt
 from flask_jwt_extended import JWTManager, create_access_token, jwt_required
 from pymongo import MongoClient
+import json
 
 def register_routes(app):
     bcrypt = Bcrypt(app)
@@ -55,3 +56,9 @@ def register_routes(app):
     @app.route('/dashboard', methods=['GET'])
     def dashboard():
         return render_template('dashboard.html')
+    
+    @app.route('/api/budget_data', methods=['GET'])
+    def budget_data():
+        with open('budget_data.json') as f:
+            data = json.load(f)
+        return jsonify(data)
