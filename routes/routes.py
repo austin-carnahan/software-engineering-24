@@ -2,7 +2,9 @@ from flask import render_template, request, jsonify, redirect, url_for, session
 from flask_bcrypt import Bcrypt
 from flask_jwt_extended import JWTManager, create_access_token, jwt_required
 from pymongo import MongoClient
-import json
+import os
+import sendgrid
+from sendgrid.helpers.mail import Mail
 
 def register_routes(app):
     bcrypt = Bcrypt(app)
@@ -11,6 +13,9 @@ def register_routes(app):
     # MongoDB connection
     client = MongoClient(app.config['MONGO_URI'])
     db = client.get_database("personal_budget")
+
+    # Initialize SendGrid client
+    sg = sendgrid.SendGridAPIClient(api_key=os.getenv('SENDGRID_API_KEY'))
 
     @app.route('/', methods=['GET'])
     def home():
@@ -90,7 +95,6 @@ def register_routes(app):
                 return redirect(url_for('budget_form'))
         except Exception as e:
             return jsonify({"error": str(e)}), 500
-        
 
     @app.route('/api/budget_data', methods=['POST'])
     def post_budget_data():
@@ -102,48 +106,18 @@ def register_routes(app):
         if not form_data:
             return jsonify({"error": "No data provided"}), 400
 
-        primary_income = form_data.get('primaryIncome')
-        other_income = form_data.get('otherIncome')
-        housing = form_data.get('housing')
-        groceries = form_data.get('groceries')
-        shopping = form_data.get('shopping')
-        transportation = form_data.get('transportation')
-        bills = form_data.get('bills')
-        entertainment = form_data.get('entertainment')
-        education = form_data.get('education')
-        savings = form_data.get('savings')
-        debt = form_data.get('debt')
-        debt_balance = form_data.get('debtBalance')
-        savings_balance = form_data.get('savingsBalance')
-
-        email = session['email']
-
+        # Extract and save form data
         try:
             db.budgets.update_one(
-            {'email': email},
-            {
-                '$set': {
-                    'primary_income': primary_income,
-                    'other_income': other_income,
-                    'housing': housing,
-                    'groceries': groceries,
-                    'shopping': shopping,
-                    'transportation': transportation,
-                    'bills': bills,
-                    'entertainment': entertainment,
-                    'education': education,
-                    'savings': savings,
-                    'debt': debt,
-                    'debt_balance': debt_balance,
-                    'savings_balance': savings_balance
-                }
-            },
-            upsert=True
-        )
+                {'email': email},
+                {
+                    '$set': form_data
+                },
+                upsert=True
+            )
             return jsonify({"message": "Budget data saved successfully"}), 201
         except Exception as e:
             return jsonify({"error": str(e)}), 500
-        
         
     @app.route('/profile', methods=['GET', 'POST'])
     def profile():
@@ -179,7 +153,7 @@ def register_routes(app):
             except Exception as e:
                 return jsonify({"error": str(e)}), 500
         return render_template('profile.html')
-    
+
     @app.route('/get_profile', methods=['GET'])
     def get_profile():
         if 'email' not in session:
@@ -202,13 +176,11 @@ def register_routes(app):
                 "email": "",
                 "phoneNumber": ""
             })
-        
+
     @app.route('/transactions', methods=['GET', 'POST'])
     def transactions():
         if 'email' not in session:
             return redirect(url_for('home'))
-
-        email = session['email']
 
         if request.method == 'POST':
             form_data = request.get_json()
@@ -223,7 +195,7 @@ def register_routes(app):
 
             try:
                 db.transactions.insert_one({
-                    'email': email,
+                    'email': session['email'],
                     'event_name': event_name,
                     'event_date': event_date,
                     'category': category,
@@ -234,7 +206,6 @@ def register_routes(app):
             except Exception as e:
                 return jsonify({"error": str(e)}), 500
 
-        # When accessed with GET method, return transactions.html
         return render_template('transactions.html')
 
     @app.route('/get_transactions', methods=['GET'])
@@ -242,9 +213,25 @@ def register_routes(app):
         if 'email' not in session:
             return redirect(url_for('home'))
 
-        email = session['email']
-        transactions = list(db.transactions.find({"email": email}, {'_id': False}))
-
+        transactions = list(db.transactions.find({"email": session['email']}, {'_id': False}))
         total_amount = sum(t['price'] for t in transactions)
-
         return jsonify(transactions=transactions, total=total_amount)
+
+    @app.route('/reset-password/<token>', methods=['GET', 'POST'])
+    def reset_password(token):
+        if request.method == 'POST':
+            new_password = request.form.get('password')
+            if not new_password:
+                return jsonify({'error': 'Password is required'}), 400
+
+            reset_entry = db.password_resets.find_one({'token': token})
+            if reset_entry:
+                email = reset_entry['email']
+                hashed_password = bcrypt.generate_password_hash(new_password).decode('utf-8')
+                db.users.update_one({'email': email}, {'$set': {'password': hashed_password}})
+                db.password_resets.delete_one({'token': token})
+                return jsonify({'message': 'Password reset successful'}), 200
+            else:
+                return jsonify({'error': 'Invalid or expired token'}), 400
+
+        return render_template('reset_password.html', token=token)

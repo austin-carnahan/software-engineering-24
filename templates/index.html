@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <link rel="stylesheet" href="/static/css/global.css">
     <link rel="stylesheet" href="/static/css/individual/home.css">
@@ -8,6 +9,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
 </head>
+
 <body>
     <header>
         <div class="logo">
@@ -45,6 +47,7 @@
             </div>
             <button type="submit">Login</button>
             <button id="register-btn" type="button">Register</button>
+            <button id="forgot-password-btn" type="button" class="forgot-password-btn">Forgot Password?</button>
         </form>
     </div>
 
@@ -75,32 +78,68 @@
         </form>
     </div>
 
+    <div class="container" id="forgot-password-container" style="display: none;">
+        <h2>Forgot Password</h2>
+        <form id="forgot-password-form" method="POST">
+            <div class="input-group">
+                <i class="fas fa-envelope"></i>
+                <input type="email" id="forgot-password-email" name="email" placeholder="Email" required>
+            </div>
+            <button type="submit">Submit</button>
+        </form>
+    </div>
+
+
+
+
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
     <script>
         $(document).ready(function() {
             $('#login-btn').click(function() {
-                // Show the login form container
                 $('#main-content').hide();
                 $('#registration-form-container').hide();
+                $('#forgot-password-container').hide();
                 $('#login-form-container').fadeIn();
             });
             $('#signup-btn').click(function() {
-                // Show the signup form container
                 $('#main-content').hide();
                 $('#login-form-container').hide();
+                $('#forgot-password-container').hide();
                 $('#registration-form-container').fadeIn();
             });
             $('#register-btn').click(function() {
-                // Show the signup form container
                 $('#main-content').hide();
                 $('#login-form-container').hide();
+                $('#forgot-password-container').hide();
                 $('#registration-form-container').fadeIn();
             });
             $('#home-btn').click(function() {
-                // Show the home content
                 $('#login-form-container').hide();
                 $('#registration-form-container').hide();
+                $('#forgot-password-container').hide();
                 $('#main-content').fadeIn();
+            });
+            $('#forgot-password-btn').click(function() {
+                $('#main-content').hide();
+                $('#login-form-container').hide();
+                $('#registration-form-container').hide();
+                $('#forgot-password-container').fadeIn();
+            });
+
+            $('#forgot-password-form').submit(function(event) {
+                event.preventDefault();
+                const formData = $(this).serialize();
+
+                $.post('/forgot-password', formData, function(response) {
+                    alert(response.message);
+                    if (response.message === "Password reset email sent") {
+                        $('#main-content').hide();
+                        $('#forgot-password-container').hide();
+                        $('#login-form-container').fadeIn();
+                    }
+                }).fail(function(response) {
+                    alert(response.responseJSON.error);
+                });
             });
 
             $('#registration-form').submit(function(event) {
@@ -126,7 +165,7 @@
                 $.post('/login', formData, function(response) {
                     alert(response.message);
                     if (response.message === "Login successful") {
-                        window.location.href = '/dashboard';  // Redirect to dashboard
+                        window.location.href = '/dashboard';
                     }
                 }).fail(function(response) {
                     alert(response.responseJSON.error);
@@ -135,4 +174,5 @@
         });
     </script>
 </body>
+
 </html>
