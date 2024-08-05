@@ -128,19 +128,30 @@
 
             $('#forgot-password-form').submit(function(event) {
                 event.preventDefault();
-                const formData = $(this).serialize();
 
-                $.post('/forgot-password', formData, function(response) {
-                    alert(response.message);
-                    if (response.message === "Password reset email sent") {
-                        $('#main-content').hide();
-                        $('#forgot-password-container').hide();
-                        $('#login-form-container').fadeIn();
+                const formData = {
+                    email: $('#forgot-password-email').val() // Adjust selector if needed
+                };
+
+                $.ajax({
+                    url: '/forgot_password',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify(formData),
+                    success: function(response) {
+                        alert(response.message);
+                        if (response.message === "Password reset email sent") {
+                            $('#main-content').hide();
+                            $('#forgot-password-container').hide();
+                            $('#login-form-container').fadeIn();
+                        }
+                    },
+                    error: function(response) {
+                        alert(response.responseJSON.error);
                     }
-                }).fail(function(response) {
-                    alert(response.responseJSON.error);
                 });
             });
+
 
             $('#registration-form').submit(function(event) {
                 event.preventDefault();

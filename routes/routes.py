@@ -1,21 +1,21 @@
+# routes/routes.py
+
+import sys
+import os
+import uuid
 from flask import render_template, request, jsonify, redirect, url_for, session
 from flask_bcrypt import Bcrypt
 from flask_jwt_extended import JWTManager, create_access_token, jwt_required
 from pymongo import MongoClient
-import os
-import sendgrid
-from sendgrid.helpers.mail import Mail
+from email_utils import send_email  # Import the send_email function
+from datetime import timedelta
 
 def register_routes(app):
     bcrypt = Bcrypt(app)
     jwt = JWTManager(app)
 
-    # MongoDB connection
     client = MongoClient(app.config['MONGO_URI'])
     db = client.get_database("personal_budget")
-
-    # Initialize SendGrid client
-    sg = sendgrid.SendGridAPIClient(api_key=os.getenv('SENDGRID_API_KEY'))
 
     @app.route('/', methods=['GET'])
     def home():
@@ -213,25 +213,105 @@ def register_routes(app):
         if 'email' not in session:
             return redirect(url_for('home'))
 
-        transactions = list(db.transactions.find({"email": session['email']}, {'_id': False}))
-        total_amount = sum(t['price'] for t in transactions)
-        return jsonify(transactions=transactions, total=total_amount)
+        email = session['email']
+        transactions = db.transactions.find({"email": email})
+        transaction_list = []
+        for transaction in transactions:
+            transaction_list.append({
+                "event_name": transaction['event_name'],
+                "event_date": transaction['event_date'],
+                "category": transaction['category'],
+                "description": transaction['description'],
+                "price": transaction['price']
+            })
 
-    @app.route('/reset-password/<token>', methods=['GET', 'POST'])
+        return jsonify(transaction_list)
+
+    # @app.route('/forgot_password', methods=['POST'])
+    # def forgot_password():
+    #     print("here at forgot")
+    #     data = request.get_json()  # Get JSON data
+    #     email = data.get('email')  # Extract email from JSON data
+
+    #     if not email:
+    #         return jsonify({"error": "Email is required"}), 400
+
+    #     user = db.users.find_one({"email": email})
+    #     print("user found", user)
+    #     if not user:
+    #         return jsonify({"error": "User not found"}), 404
+    #     print("passw",user["password"])
+        
+    #     subject = "Password Reset Request"
+    #     body = f"Your password is: {user["password"]}"
+        
+    #     try:
+    #         send_email(subject, body, email)
+    #         return jsonify({"message": "Password reset email sent"}), 200
+    #     except Exception as e:
+    #         return jsonify({"error": str(e)}), 500
+
+    @app.route('/forgot_password', methods=['POST'])
+    def forgot_password():
+        print("in forgot")
+        data = request.get_json() 
+        print("Data", data )
+         # Get JSON data
+        email = data.get('email')  # Extract email from JSON data
+
+        if not email:
+            return jsonify({"error": "Email is required"}), 400
+
+        user = db.users.find_one({"email": email})
+        if not user:
+            return jsonify({"error": "User not found"}), 404
+
+        # Generate a unique token
+        token = str(uuid.uuid4())
+        reset_link = url_for('reset_password', token=token, _external=True)
+
+        # Save the token in the database
+        db.password_resets.update_one(
+            {"email": email},
+            {"$set": {"token": token}},
+            upsert=True
+        )
+
+        subject = "Password Reset Request"
+        body = f"Click the link to reset your password: {reset_link}"
+        
+        try:
+            send_email(subject, body, email)
+            return jsonify({"message": "Password reset email sent"}), 200
+        except Exception as e:
+            return jsonify({"error": str(e)}), 500
+
+    @app.route('/reset_password/<token>', methods=['GET', 'POST'])
     def reset_password(token):
         if request.method == 'POST':
-            new_password = request.form.get('password')
-            if not new_password:
-                return jsonify({'error': 'Password is required'}), 400
+            data = request.get_json()
+            new_password = data.get('password')
 
-            reset_entry = db.password_resets.find_one({'token': token})
-            if reset_entry:
-                email = reset_entry['email']
-                hashed_password = bcrypt.generate_password_hash(new_password).decode('utf-8')
-                db.users.update_one({'email': email}, {'$set': {'password': hashed_password}})
-                db.password_resets.delete_one({'token': token})
-                return jsonify({'message': 'Password reset successful'}), 200
-            else:
-                return jsonify({'error': 'Invalid or expired token'}), 400
+            if not new_password:
+                return jsonify({"error": "Password is required"}), 400
+
+            reset_entry = db.password_resets.find_one({"token": token})
+
+            if not reset_entry:
+                return jsonify({"error": "Invalid or expired token"}), 400
+
+            email = reset_entry['email']
+            hashed_password = bcrypt.generate_password_hash(new_password).decode('utf-8')
+
+            # Update the user's password
+            db.users.update_one(
+                {"email": email},
+                {"$set": {"password": hashed_password}}
+            )
+
+            # Remove the token entry after successful password reset
+            db.password_resets.delete_one({"token": token})
+
+            return jsonify({"message": "Password has been reset"}), 200
 
         return render_template('reset_password.html', token=token)
