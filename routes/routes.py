@@ -3,6 +3,7 @@ from flask_bcrypt import Bcrypt
 from flask_jwt_extended import JWTManager, create_access_token, jwt_required
 from pymongo import MongoClient
 import json
+from bson import ObjectId
 
 def register_routes(app):
     bcrypt = Bcrypt(app)
@@ -243,8 +244,32 @@ def register_routes(app):
             return redirect(url_for('home'))
 
         email = session['email']
-        transactions = list(db.transactions.find({"email": email}, {'_id': False}))
+        transactions = list(db.transactions.find({"email": email}, {'_id': True, 'event_name': True, 'event_date': True, 'category': True, 'price': True}))
 
+        # Convert ObjectId to string
+        for transaction in transactions:
+            transaction['_id'] = str(transaction['_id'])
+    
         total_amount = sum(t['price'] for t in transactions)
 
         return jsonify(transactions=transactions, total=total_amount)
+
+    @app.route('/delete_transaction', methods=['DELETE'])
+    def delete_transaction():
+        if 'email' not in session:
+            return jsonify({"error": "Unauthorized"}), 401
+
+        email = session['email']
+        transaction_id = request.args.get('transaction_id')
+
+        if not transaction_id:
+            return jsonify({"error": "Transaction ID is required"}), 400
+
+        try:
+            result = db.transactions.delete_one({"_id": ObjectId(transaction_id), "email": email})
+            if result.deleted_count == 1:
+                return jsonify({"message": "Transaction deleted successfully"}), 200
+            else:
+                return jsonify({"error": "Transaction not found"}), 404
+        except Exception as e:
+            return jsonify({"error": str(e)}), 500
