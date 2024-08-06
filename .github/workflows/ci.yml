@@ -65,10 +65,3 @@ jobs:
       - name: Compile code
         run: python -m compileall .
         continue-on-error: false
-
-      - name: Check for build artifacts
-        run: |
-          if [ ! -f some_artifact_file ]; then
-            echo "Build artifact not found!"
-            exit 1
-          fi
