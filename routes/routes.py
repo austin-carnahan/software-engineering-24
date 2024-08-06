@@ -253,10 +253,7 @@ def register_routes(app):
 
     @app.route('/forgot_password', methods=['POST'])
     def forgot_password():
-        print("in forgot")
-        data = request.get_json() 
-        print("Data", data )
-         # Get JSON data
+        data = request.get_json()
         email = data.get('email')  # Extract email from JSON data
 
         if not email:
@@ -268,7 +265,7 @@ def register_routes(app):
 
         # Generate a unique token
         token = str(uuid.uuid4())
-        reset_link = url_for('reset_password', token=token, _external=True)
+        reset_link = f"http://127.0.0.1:5500/templates/reset_password.html?token={token}"
 
         # Save the token in the database
         db.password_resets.update_one(
