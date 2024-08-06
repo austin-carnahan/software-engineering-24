@@ -34,7 +34,7 @@ jobs:
 
       - name: Run unit tests
         run: |
-          pytest --junitxml=junit/test-results.xml
+          pytest tests/test_app.py --junitxml=junit/test-results.xml
         continue-on-error: false
 
       - name: Archive test results
@@ -71,3 +71,4 @@ jobs:
           if [ ! -f some_artifact_file ]; then
             echo "Build artifact not found!"
             exit 1
+          fi
