@@ -1,13 +1,18 @@
 import sys
 import os
 import pytest
-from flask import Flask, jsonify
+from flask import Flask, jsonify, session
 from flask_bcrypt import Bcrypt
-from flask_jwt_extended import JWTManager
+from flask_jwt_extended import JWTManager, create_access_token
 from flask_cors import CORS
+from pymongo import MongoClient
+import json
 
 # Add the project root to the Python path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
+# Import register_routes function
+from routes import register_routes
 
 @pytest.fixture
 def app():
@@ -17,28 +22,24 @@ def app():
     app.config['TESTING'] = True
     app.config['JWT_SECRET_KEY'] = 'super-secret-key'
     app.config['MONGO_URI'] = 'mongodb://localhost:27017/testdb'  # Dummy URI for testing
+    app.config['SECRET_KEY'] = 'super-secret-key'  # Needed for session handling
     
     CORS(app)
     bcrypt = Bcrypt(app)
     jwt = JWTManager(app)
 
-    @app.route('/')
-    def home():
-        return jsonify({"message": "Home Route"})
-
-    @app.route('/login', methods=["POST"])
-    def login():
-        return jsonify({"message": "Login Route"}), 200
-
-    @app.route('/dashboard')
-    def dashboard():
-        return jsonify({"message": "Dashboard Route"}), 200
+    register_routes(app)  # Register routes
 
     yield app
 
 @pytest.fixture
 def client(app):
     return app.test_client()
+
+@pytest.fixture(autouse=True)
+def clear_db():
+    client = MongoClient('mongodb://localhost:27017/')
+    client.drop_database('testdb')
 
 def test_home_route(client):
     response = client.get('/')
@@ -55,6 +56,11 @@ def test_login_route_accessible(client):
 def test_dashboard_route(client):
     response = client.get('/dashboard')
     assert response.status_code == 200
+
+def test_app_configuration(app):
+    """Test if the app is configured correctly."""
+    assert app.config['TESTING'] is True
+    assert app.config['JWT_SECRET_KEY'] == 'super-secret-key'
 
 def test_bcrypt_hashing(app):
     """Test if Bcrypt hashing works correctly."""
