@@ -47,11 +47,11 @@
                         <label for="category">Category:</label>
                         <select id="category" name="category" required>
                             <option value="">Select a category</option>
-                            <option value="food">Food</option>
-                            <option value="accommodation">Accommodation</option>
-                            <option value="transport">Transport</option>
-                            <option value="shopping">Shopping</option>
-                            <option value="miscellaneous">Miscellaneous</option>
+                            <option value="Food">Food</option>
+                            <option value="Accommodation">Accommodation</option>
+                            <option value="Transport">Transport</option>
+                            <option value="Shopping">Shopping</option>
+                            <option value="Miscellaneous">Miscellaneous</option>
                         </select>
 
                         <label for="description">Description:</label>
@@ -92,18 +92,18 @@
             sidebar.classList.toggle('active');
             content.classList.toggle('sidebar-active');
         });
-        $(document).ready(function() {
-            $('#logout-btn').click(function() {
-                $.get('/logout', function(response) {
+        $(document).ready(function () {
+            $('#logout-btn').click(function () {
+                $.get('/logout', function (response) {
                     alert(response.message);
                     window.location.href = '/';
-                }).fail(function() {
+                }).fail(function () {
                     alert('Logout failed. Please try again.');
                 });
             });
 
             // Handle form submission
-            $('#transactionForm').submit(function(event) {
+            $('#transactionForm').submit(function (event) {
                 event.preventDefault();
 
                 const formData = {
@@ -119,39 +119,64 @@
                     method: 'POST',
                     contentType: 'application/json',
                     data: JSON.stringify(formData),
-                    success: function(response) {
+                    success: function (response) {
                         $('#summary').text(response.message);
                         loadTransactions(); // Load transactions after adding a new one
                     },
-                    error: function(response) {
+                    error: function (response) {
                         $('#errors').text(response.responseJSON.error || 'An error occurred. Please try again.');
                     }
                 });
             });
 
             function loadTransactions() {
-                $.get('/get_transactions', function(response) {
+                $.get('/get_transactions', function (response) {
                     const transactions = response.transactions;
                     $('#transaction-count').text(transactions.length);
                     $('#total-amount').text(response.total.toFixed(2));
 
                     const transactionBody = $('#transactions-body');
                     transactionBody.empty();
-                    transactions.forEach(function(transaction) {
+                    transactions.forEach(function (transaction) {
                         transactionBody.append(`
-                            <tr>
-                                <td><img src="/static/icons/${transaction.category}.png" alt="${transaction.category} icon"></td>
-                                <td class="transaction-description">
-                                    <span class="category">${transaction.category}</span>
-                                    <span>${transaction.event_name}</span>
-                                    <br>
-                                    <span class="transaction-date">${transaction.event_date}</span>
-                                </td>
-                                <td class="transaction-amount">${transaction.price < 0 ? '-' : ''}$${Math.abs(transaction.price).toFixed(2)}</td>
-                                <td class="transaction-menu">...</td>
-                            </tr>
-                        `);
+                <tr>
+                    <td><img src="/static/images/${transaction.category}.png" alt="${transaction.category} icon"></td>
+                    <td class="transaction-description">
+                        <span class="category">${transaction.category}</span>
+                    </td>
+                    <td>
+                        <span>${transaction.event_name}</span>
+                    </td>
+                    <td>
+                        <span class="transaction-date">${transaction.event_date}</span>
+                    </td>
+                    <td class="transaction-amount">${transaction.price < 0 ? '-' : ''}$${Math.abs(transaction.price).toFixed(2)}</td>
+                    <td class="transaction-menu">
+                        <button class="delete-transaction-btn" data-id="${transaction._id}">🗑️</button>
+                    </td>
+                </tr>
+            `);
                     });
+
+                    // Add event listener for delete buttons
+                    $('.delete-transaction-btn').click(function () {
+                        const transactionId = $(this).data('id');  // Retrieve the data-id
+                        deleteTransaction(transactionId);
+                    });
+                });
+            }
+
+            function deleteTransaction(transactionId) {
+                $.ajax({
+                    url: `/delete_transaction?transaction_id=${transactionId}`,
+                    method: 'DELETE',
+                    success: function (response) {
+                        $('#summary').text(response.message);
+                        loadTransactions(); // Reload transactions after deleting one
+                    },
+                    error: function (response) {
+                        $('#errors').text(response.responseJSON.error || 'An error occurred. Please try again.');
+                    }
                 });
             }
 

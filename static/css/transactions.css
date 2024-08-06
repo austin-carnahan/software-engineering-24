@@ -106,13 +106,11 @@
 }
 
 #transaction-list .transaction-description {
-    display: flex;
     align-items: center;
 }
 
 #transaction-list .transaction-description .category {
     font-weight: bold;
-    margin-right: 5px;
 }
 
 #transaction-list .transaction-amount {
