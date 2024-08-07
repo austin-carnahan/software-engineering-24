@@ -9,6 +9,8 @@ from flask_jwt_extended import JWTManager, create_access_token, jwt_required
 from pymongo import MongoClient
 from email_utils import send_email  # Import the send_email function
 from datetime import timedelta
+import json
+from bson import ObjectId
 
 def register_routes(app):
     bcrypt = Bcrypt(app)
@@ -350,3 +352,25 @@ def register_routes(app):
                 return jsonify({"error": str(e)}), 500
 
         return render_template('reset_password.html', token=token)
+
+
+    @app.route('/delete_transaction', methods=['DELETE'])
+    def delete_transaction():
+        if 'email' not in session:
+            return jsonify({"error": "Unauthorized"}), 401
+
+        email = session['email']
+        transaction_id = request.args.get('transaction_id')
+
+        if not transaction_id:
+            return jsonify({"error": "Transaction ID is required"}), 400
+
+        try:
+            result = db.transactions.delete_one({"_id": ObjectId(transaction_id), "email": email})
+            if result.deleted_count == 1:
+                return jsonify({"message": "Transaction deleted successfully"}), 200
+            else:
+                return jsonify({"error": "Transaction not found"}), 404
+        except Exception as e:
+            return jsonify({"error": str(e)}), 500
+
