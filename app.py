@@ -1,8 +1,9 @@
+import os
 from flask import Flask, jsonify, session
 from flask_cors import CORS
 from flask_bcrypt import Bcrypt
 from flask_jwt_extended import JWTManager
-import os
+from routes.routes import register_routes
 
 def create_app():
     app = Flask(__name__)
@@ -16,7 +17,6 @@ def create_app():
     jwt = JWTManager(app)
 
     # Import and register routes
-    from routes.routes import register_routes
     register_routes(app)
 
     @app.errorhandler(Exception)

@@ -99,10 +99,11 @@ nav ul li .auth-button:hover {
 }
 
 
-/* Login and registration form styles */
+/* Form container styles */
 
 #login-form-container,
-#registration-form-container {
+#registration-form-container,
+#forgot-password-container {
     background-color: #FFFFFF;
     color: #000000;
     max-width: 500px;
@@ -113,10 +114,14 @@ nav ul li .auth-button:hover {
 }
 
 #login-form-container h2,
-#registration-form-container h2 {
+#registration-form-container h2,
+#forgot-password-container h2 {
     color: #007BFF;
     margin-bottom: 20px;
 }
+
+
+/* Input group styles */
 
 .input-group {
     display: flex;
@@ -136,22 +141,8 @@ nav ul li .auth-button:hover {
     font-size: 16px;
 }
 
-.checkbox-group {
-    margin-bottom: 20px;
-}
 
-.checkbox-group input {
-    margin-right: 10px;
-}
-
-.links a {
-    color: #007BFF;
-    text-decoration: none;
-}
-
-.links a:hover {
-    text-decoration: underline;
-}
+/* Button styles */
 
 button {
     background-color: #007BFF;

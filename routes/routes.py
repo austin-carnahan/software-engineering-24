@@ -1,7 +1,14 @@
+# routes/routes.py
+
+import sys
+import os
+import uuid
 from flask import render_template, request, jsonify, redirect, url_for, session
 from flask_bcrypt import Bcrypt
 from flask_jwt_extended import JWTManager, create_access_token, jwt_required
 from pymongo import MongoClient
+from email_utils import send_email  # Import the send_email function
+from datetime import timedelta
 import json
 from bson import ObjectId
 
@@ -9,7 +16,6 @@ def register_routes(app):
     bcrypt = Bcrypt(app)
     jwt = JWTManager(app)
 
-    # MongoDB connection
     client = MongoClient(app.config['MONGO_URI'])
     db = client.get_database("personal_budget")
 
@@ -91,7 +97,6 @@ def register_routes(app):
                 return redirect(url_for('budget_form'))
         except Exception as e:
             return jsonify({"error": str(e)}), 500
-        
 
     @app.route('/api/budget_data', methods=['POST'])
     def post_budget_data():
@@ -103,48 +108,18 @@ def register_routes(app):
         if not form_data:
             return jsonify({"error": "No data provided"}), 400
 
-        primary_income = form_data.get('primaryIncome')
-        other_income = form_data.get('otherIncome')
-        housing = form_data.get('housing')
-        groceries = form_data.get('groceries')
-        shopping = form_data.get('shopping')
-        transportation = form_data.get('transportation')
-        bills = form_data.get('bills')
-        entertainment = form_data.get('entertainment')
-        education = form_data.get('education')
-        savings = form_data.get('savings')
-        debt = form_data.get('debt')
-        debt_balance = form_data.get('debtBalance')
-        savings_balance = form_data.get('savingsBalance')
-
-        email = session['email']
-
+        # Extract and save form data
         try:
             db.budgets.update_one(
-            {'email': email},
-            {
-                '$set': {
-                    'primary_income': primary_income,
-                    'other_income': other_income,
-                    'housing': housing,
-                    'groceries': groceries,
-                    'shopping': shopping,
-                    'transportation': transportation,
-                    'bills': bills,
-                    'entertainment': entertainment,
-                    'education': education,
-                    'savings': savings,
-                    'debt': debt,
-                    'debt_balance': debt_balance,
-                    'savings_balance': savings_balance
-                }
-            },
-            upsert=True
-        )
+                {'email': email},
+                {
+                    '$set': form_data
+                },
+                upsert=True
+            )
             return jsonify({"message": "Budget data saved successfully"}), 201
         except Exception as e:
             return jsonify({"error": str(e)}), 500
-        
         
     @app.route('/profile', methods=['GET', 'POST'])
     def profile():
@@ -180,7 +155,7 @@ def register_routes(app):
             except Exception as e:
                 return jsonify({"error": str(e)}), 500
         return render_template('profile.html')
-    
+
     @app.route('/get_profile', methods=['GET'])
     def get_profile():
         if 'email' not in session:
@@ -203,13 +178,11 @@ def register_routes(app):
                 "email": "",
                 "phoneNumber": ""
             })
-        
+
     @app.route('/transactions', methods=['GET', 'POST'])
     def transactions():
         if 'email' not in session:
             return redirect(url_for('home'))
-
-        email = session['email']
 
         if request.method == 'POST':
             form_data = request.get_json()
@@ -224,7 +197,7 @@ def register_routes(app):
 
             try:
                 db.transactions.insert_one({
-                    'email': email,
+                    'email': session['email'],
                     'event_name': event_name,
                     'event_date': event_date,
                     'category': category,
@@ -235,7 +208,6 @@ def register_routes(app):
             except Exception as e:
                 return jsonify({"error": str(e)}), 500
 
-        # When accessed with GET method, return transactions.html
         return render_template('transactions.html')
 
     @app.route('/get_transactions', methods=['GET'])
@@ -244,15 +216,143 @@ def register_routes(app):
             return redirect(url_for('home'))
 
         email = session['email']
-        transactions = list(db.transactions.find({"email": email}, {'_id': True, 'event_name': True, 'event_date': True, 'category': True, 'price': True}))
-
-        # Convert ObjectId to string
+        transactions = db.transactions.find({"email": email})
+        transaction_list = []
         for transaction in transactions:
-            transaction['_id'] = str(transaction['_id'])
-    
-        total_amount = sum(t['price'] for t in transactions)
+            transaction_list.append({
+                "event_name": transaction['event_name'],
+                "event_date": transaction['event_date'],
+                "category": transaction['category'],
+                "description": transaction['description'],
+                "price": transaction['price']
+            })
 
-        return jsonify(transactions=transactions, total=total_amount)
+        return jsonify(transaction_list)
+
+    # @app.route('/forgot_password', methods=['POST'])
+    # def forgot_password():
+    #     print("here at forgot")
+    #     data = request.get_json()  # Get JSON data
+    #     email = data.get('email')  # Extract email from JSON data
+
+    #     if not email:
+    #         return jsonify({"error": "Email is required"}), 400
+
+    #     user = db.users.find_one({"email": email})
+    #     print("user found", user)
+    #     if not user:
+    #         return jsonify({"error": "User not found"}), 404
+    #     print("passw",user["password"])
+        
+    #     subject = "Password Reset Request"
+    #     body = f"Your password is: {user["password"]}"
+        
+    #     try:
+    #         send_email(subject, body, email)
+    #         return jsonify({"message": "Password reset email sent"}), 200
+    #     except Exception as e:
+    #         return jsonify({"error": str(e)}), 500
+
+    @app.route('/forgot_password', methods=['POST'])
+    def forgot_password():
+        data = request.get_json()
+        email = data.get('email')  # Extract email from JSON data
+
+        if not email:
+            return jsonify({"error": "Email is required"}), 400
+
+        user = db.users.find_one({"email": email})
+        if not user:
+            return jsonify({"error": "User not found"}), 404
+
+        # Generate a unique token
+        token = str(uuid.uuid4())
+        reset_link = f"http://127.0.0.1:5500/templates/reset_password.html?token={token}"
+
+        # Save the token in the database
+        db.password_resets.update_one(
+            {"email": email},
+            {"$set": {"token": token}},
+            upsert=True
+        )
+
+        subject = "Password Reset Request"
+        body = f"Click the link to reset your password: {reset_link}"
+        
+        try:
+            send_email(subject, body, email)
+            return jsonify({"message": "Password reset email sent"}), 200
+        except Exception as e:
+            return jsonify({"error": str(e)}), 500
+
+    # @app.route('/reset_password/<token>', methods=['GET', 'POST'])
+    # def reset_password(token):
+    #     if request.method == 'POST':
+    #         data = request.get_json()
+    #         new_password = data.get('password')
+
+    #         if not new_password:
+    #             return jsonify({"error": "Password is required"}), 400
+
+    #         reset_entry = db.password_resets.find_one({"token": token})
+
+    #         if not reset_entry:
+    #             return jsonify({"error": "Invalid or expired token"}), 400
+
+    #         email = reset_entry['email']
+    #         hashed_password = bcrypt.generate_password_hash(new_password).decode('utf-8')
+
+    #         # Update the user's password
+    #         db.users.update_one(
+    #             {"email": email},
+    #             {"$set": {"password": hashed_password}}
+    #         )
+
+    #         # Remove the token entry after successful password reset
+    #         db.password_resets.delete_one({"token": token})
+
+    #         return jsonify({"message": "Password has been reset"}), 200
+
+    #     return render_template('reset_password.html', token=token)
+
+    @app.route('/reset_password/<token>', methods=['GET', 'POST'])
+    def reset_password(token):
+        if request.method == 'POST':
+            try:
+                data = request.get_json()
+                new_password = data.get('password')
+
+                print("New Password: ", new_password)
+
+                if not new_password:
+                    return jsonify({"error": "Password is required"}), 400
+
+                reset_entry = db.password_resets.find_one({"token": token})
+
+                print("Reset Entry: ", reset_entry)
+
+                if not reset_entry:
+                    return jsonify({"error": "Invalid or expired token"}), 400
+
+                email = reset_entry['email']
+                hashed_password = bcrypt.generate_password_hash(new_password).decode('utf-8')
+
+                # Update the user's password
+                db.users.update_one(
+                    {"email": email},
+                    {"$set": {"password": hashed_password}}
+                )
+
+                # Remove the token entry after successful password reset
+                db.password_resets.delete_one({"token": token})
+
+                return jsonify({"message": "Password has been reset"}), 200
+        
+            except Exception as e:
+                return jsonify({"error": str(e)}), 500
+
+        return render_template('reset_password.html', token=token)
+
 
     @app.route('/delete_transaction', methods=['DELETE'])
     def delete_transaction():
@@ -273,3 +373,4 @@ def register_routes(app):
                 return jsonify({"error": "Transaction not found"}), 404
         except Exception as e:
             return jsonify({"error": str(e)}), 500
+
