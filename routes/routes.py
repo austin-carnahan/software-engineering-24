@@ -283,32 +283,70 @@ def register_routes(app):
         except Exception as e:
             return jsonify({"error": str(e)}), 500
 
+    # @app.route('/reset_password/<token>', methods=['GET', 'POST'])
+    # def reset_password(token):
+    #     if request.method == 'POST':
+    #         data = request.get_json()
+    #         new_password = data.get('password')
+
+    #         if not new_password:
+    #             return jsonify({"error": "Password is required"}), 400
+
+    #         reset_entry = db.password_resets.find_one({"token": token})
+
+    #         if not reset_entry:
+    #             return jsonify({"error": "Invalid or expired token"}), 400
+
+    #         email = reset_entry['email']
+    #         hashed_password = bcrypt.generate_password_hash(new_password).decode('utf-8')
+
+    #         # Update the user's password
+    #         db.users.update_one(
+    #             {"email": email},
+    #             {"$set": {"password": hashed_password}}
+    #         )
+
+    #         # Remove the token entry after successful password reset
+    #         db.password_resets.delete_one({"token": token})
+
+    #         return jsonify({"message": "Password has been reset"}), 200
+
+    #     return render_template('reset_password.html', token=token)
+
     @app.route('/reset_password/<token>', methods=['GET', 'POST'])
     def reset_password(token):
         if request.method == 'POST':
-            data = request.get_json()
-            new_password = data.get('password')
+            try:
+                data = request.get_json()
+                new_password = data.get('password')
 
-            if not new_password:
-                return jsonify({"error": "Password is required"}), 400
+                print("New Password: ", new_password)
 
-            reset_entry = db.password_resets.find_one({"token": token})
+                if not new_password:
+                    return jsonify({"error": "Password is required"}), 400
 
-            if not reset_entry:
-                return jsonify({"error": "Invalid or expired token"}), 400
+                reset_entry = db.password_resets.find_one({"token": token})
 
-            email = reset_entry['email']
-            hashed_password = bcrypt.generate_password_hash(new_password).decode('utf-8')
+                print("Reset Entry: ", reset_entry)
 
-            # Update the user's password
-            db.users.update_one(
-                {"email": email},
-                {"$set": {"password": hashed_password}}
-            )
+                if not reset_entry:
+                    return jsonify({"error": "Invalid or expired token"}), 400
 
-            # Remove the token entry after successful password reset
-            db.password_resets.delete_one({"token": token})
+                email = reset_entry['email']
+                hashed_password = bcrypt.generate_password_hash(new_password).decode('utf-8')
 
-            return jsonify({"message": "Password has been reset"}), 200
+                # Update the user's password
+                db.users.update_one(
+                    {"email": email},
+                    {"$set": {"password": hashed_password}}
+                )
+
+                # Remove the token entry after successful password reset
+                db.password_resets.delete_one({"token": token})
+
+                return jsonify({"message": "Password has been reset"}), 200
+        
+            except Exception as e:
+                return jsonify({"error": str(e)}), 500
 
         return render_template('reset_password.html', token=token)
